@@ -26,6 +26,13 @@ env:
 
 jobs:
   image:
+    # Serialise image builds repo-wide. See the ggml repo for rationale: these
+    # are long builds and parallel branch runs only contend for runners. The
+    # workflow-level group still cancels superseded runs of the same branch.
+    # Caveat: at most one pending run per group; the rest are cancelled.
+    concurrency:
+      group: image-serialize-${{ github.repository }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: read
