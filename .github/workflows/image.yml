@@ -7,10 +7,7 @@ name: image
 on:
   workflow_dispatch:
   push:
-    # TEMPORARY: add-runpod-image publishes so the image can be pulled and
-    # verified on real GPU hardware before merging. Drop it from this list
-    # once verified -- main should be the only publishing branch.
-    branches: [main, add-runpod-image]
+    branches: [main]
     paths: &image_paths
       - 'Dockerfile'
       - 'inference/**'
@@ -68,4 +65,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # mode=min: this image is >10GB and GHA cache caps at 10GB per
+          # repo, so mode=max spends longer exporting cache than building.
+          cache-to: type=gha,mode=min
