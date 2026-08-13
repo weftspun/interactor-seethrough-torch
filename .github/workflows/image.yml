@@ -1,19 +1,24 @@
 name: image
 
 # Builds the linux/amd64 runtime image and pushes it to GHCR.
-# Native amd64 runner on purpose: cross-building this under qemu from arm64
-# is slow and fragile for a Vulkan/shader toolchain.
+# Native amd64 runner on purpose: cross-building multi-GB cu128 torch wheels
+# under qemu from arm64 is slow and fragile.
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths:
+    paths: &image_paths
       - 'Dockerfile'
       - 'inference/**'
       - 'common/**'
+      - 'annotators/**'
       - 'requirements.txt'
       - '.github/workflows/image.yml'
+  # Build (but do not publish) on PRs, so a Dockerfile change is proven
+  # before it reaches main. GHCR push is gated below on event type.
+  pull_request:
+    paths: *image_paths
 
 env:
   REGISTRY: ghcr.io
@@ -55,7 +60,7 @@ jobs:
         with:
           context: .
           platforms: linux/amd64
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
